@@ -103,6 +103,9 @@ public class DatePickerDialog extends DialogFragment implements
     private static SimpleDateFormat YEAR_FORMAT = new SimpleDateFormat("yyyy", Locale.getDefault());
     private static SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("dd", Locale.getDefault());
 
+    private boolean mSingleDate = false;
+    private CharSequence mStartTitle = null;
+    private CharSequence mEndTitle = null;
     private Calendar mCalendar = Calendar.getInstance();
     private Calendar mCalendarEnd = Calendar.getInstance();
     private OnDateSetListener mCallBack;
@@ -196,21 +199,54 @@ public class DatePickerDialog extends DialogFragment implements
      * @param dayOfMonth The initial day of the dialog.
      */
     public static DatePickerDialog newInstance(OnDateSetListener callBack, int year,
-            int monthOfYear, 
-            int dayOfMonth) {
+                                               int monthOfYear,
+                                               int dayOfMonth) {
         DatePickerDialog ret = new DatePickerDialog();
-        ret.initialize(callBack, year, monthOfYear, dayOfMonth);
+        ret.initialize(callBack, year, monthOfYear, dayOfMonth, year, monthOfYear, dayOfMonth, false);
         return ret;
     }
 
-    public void initialize(OnDateSetListener callBack, int year, int monthOfYear, int dayOfMonth) {
+    /**
+     * @param callBack How the parent is notified that the date is set.
+     * @param year The initial year of the dialog.
+     * @param monthOfYear The initial month of the dialog.
+     * @param dayOfMonth The initial day of the dialog.
+     */
+    public static DatePickerDialog newInstance(OnDateSetListener callBack,
+                                               int year, int monthOfYear, int dayOfMonth,
+                                               int yearEnd, int monthOfYearEnd, int dayOfMonthEnd) {
+        DatePickerDialog ret = new DatePickerDialog();
+        ret.initialize(callBack, year, monthOfYear, dayOfMonth, yearEnd, monthOfYearEnd, dayOfMonthEnd, false);
+        return ret;
+    }
+
+    /**
+     * @param callBack How the parent is notified that the date is set.
+     * @param year The initial year of the dialog.
+     * @param monthOfYear The initial month of the dialog.
+     * @param dayOfMonth The initial day of the dialog.
+     * @param singleDate Sets the date picker to only show a single date selection
+     */
+    public static DatePickerDialog newInstance(OnDateSetListener callBack, int year,
+                                               int monthOfYear,
+                                               int dayOfMonth,
+                                               boolean singleDate) {
+        DatePickerDialog ret = new DatePickerDialog();
+        ret.initialize(callBack, year, monthOfYear, dayOfMonth, year, monthOfYear, dayOfMonth, singleDate);
+        return ret;
+    }
+
+    public void initialize(OnDateSetListener callBack, int year, int monthOfYear, int dayOfMonth,
+                           int yearEnd, int monthOfYearEnd, int dayOfMonthEnd, boolean singleDate) {
         mCallBack = callBack;
         mCalendar.set(Calendar.YEAR, year);
         mCalendar.set(Calendar.MONTH, monthOfYear);
         mCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-        mCalendarEnd.set(Calendar.YEAR, year);
-        mCalendarEnd.set(Calendar.MONTH, monthOfYear);
-        mCalendarEnd.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+        mCalendarEnd.set(Calendar.YEAR, yearEnd);
+        mCalendarEnd.set(Calendar.MONTH, monthOfYearEnd);
+        mCalendarEnd.set(Calendar.DAY_OF_MONTH, dayOfMonthEnd);
+
+        mSingleDate = singleDate;
 
         mThemeDark = false;
         mAccentColor = -1;
@@ -294,14 +330,20 @@ public class DatePickerDialog extends DialogFragment implements
 
         TabHost.TabSpec startDatePage = tabHost.newTabSpec("start");
         startDatePage.setContent(R.id.start_date_group);
-        startDatePage.setIndicator(activity.getResources().getString(R.string.mdtp_from));
+        startDatePage.setIndicator(mStartTitle == null ? activity.getResources().getString(R.string.mdtp_from) : mStartTitle);
 
-        TabHost.TabSpec endDatePage = tabHost.newTabSpec("end");
-        endDatePage.setContent(R.id.end_date_group);
-        endDatePage.setIndicator(activity.getResources().getString(R.string.mdtp_to));
+        TabHost.TabSpec endDatePage = null;
+        if (!mSingleDate) {
+            endDatePage = tabHost.newTabSpec("end");
+            endDatePage.setContent(R.id.end_date_group);
+            endDatePage.setIndicator(mEndTitle == null ? activity.getResources().getString(R.string.mdtp_to) : mEndTitle);
+        } else {
+            view.findViewById(R.id.end_date_group).setVisibility(View.GONE);
+        }
 
         tabHost.addTab(startDatePage);
-        tabHost.addTab(endDatePage);
+        if (endDatePage != null)
+            tabHost.addTab(endDatePage);
 
         mDayOfWeekView = (TextView) view.findViewById(R.id.date_picker_header);
         mMonthAndDayView = (LinearLayout) view.findViewById(R.id.date_picker_month_and_day);
@@ -476,6 +518,11 @@ public class DatePickerDialog extends DialogFragment implements
             }
         });
         return view;
+    }
+
+    public void setTitle(CharSequence startTitle, CharSequence endTitle) {
+        mStartTitle = startTitle;
+        mEndTitle = endTitle;
     }
 
     @Override
