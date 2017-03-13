@@ -92,4 +92,9 @@ public class MainActivity extends AppCompatActivity implements
 
         timeTextView.setText(time);
     }
+
+    @Override
+    public void onTimeChanged(TimePickerDialog picker, int hourOfDay, int minute, int hourOfDayEnd, int minuteEnd) {
+
+    }
 }
